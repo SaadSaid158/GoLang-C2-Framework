@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"github.com/peterh/liner"
-	"golang.org/x/crypto/pbkdf2"
-	"golang.org/x/crypto/sha3"
 	"io/ioutil"
 	"net"
-	"os"
 	"strings"
 	"sync"
 
@@ -21,7 +17,7 @@ import (
 )
 
 var implants = make(map[string]net.Conn)
-var mutex = sync.Mutex()
+var mutex sync.Mutex
 var db *sql.DB
 var privateKey *rsa.PrivateKey
 
@@ -58,7 +54,7 @@ func loadPrivateKey() {
 		panic("[-] Failed to decode RSA private key")
 	}
 
-	privateKey, err = rsa.ParsePKCS1PrivateKey(block.Bytes)
+	privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		panic(err)
 	}
