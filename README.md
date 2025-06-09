@@ -21,7 +21,7 @@ Unauthorized or malicious use of this framework is strictly prohibited. By using
    ```bash
    ./server_app
    ```
-4. Run the implant on the target system. It connects to `127.0.0.1:5000` by default.
+4. Run the implant on the target system. It connects to `127.0.0.1:5000` by default. The binaries look for certificate and key files relative to their own location, so keep the `certs` folder next to the executables.
 
 ## Server CLI Usage
 The attacker CLI supports the following commands:

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -24,12 +25,13 @@ var (
 )
 
 func main() {
-	loadPublicKey()
+	baseDir := getBaseDir()
+	loadPublicKey(filepath.Join(baseDir, "certs", "rsa_public.pem"))
 	serverAddr := "127.0.0.1:5000"
 
 	sleepInterval = 0
 
-	caCert, err := os.ReadFile("certs/server.crt")
+	caCert, err := os.ReadFile(filepath.Join(baseDir, "certs", "server.crt"))
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +69,8 @@ func main() {
 	}
 }
 
-func loadPublicKey() {
-	keyData, err := os.ReadFile("certs/rsa_public.pem")
+func loadPublicKey(path string) {
+	keyData, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -120,4 +122,12 @@ func getSysInfo() string {
 	host, _ := os.Hostname()
 	user := os.Getenv("USER")
 	return fmt.Sprintf("hostname: %s\nuser: %s\nos: %s\narch: %s", host, user, runtime.GOOS, runtime.GOARCH)
+}
+
+func getBaseDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "."
+	}
+	return filepath.Dir(exe)
 }

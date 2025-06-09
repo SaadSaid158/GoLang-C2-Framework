@@ -14,6 +14,7 @@ import (
 	"github.com/peterh/liner"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -26,10 +27,14 @@ var db *sql.DB
 var privateKey *rsa.PrivateKey
 
 func main() {
-	loadPrivateKey()
+	baseDir := getBaseDir()
+	loadPrivateKey(filepath.Join(baseDir, "certs", "rsa_private.pem"))
 	initDB()
 
-	cert, err := tls.LoadX509KeyPair("certs/server.crt", "certs/server.key")
+	cert, err := tls.LoadX509KeyPair(
+		filepath.Join(baseDir, "certs", "server.crt"),
+		filepath.Join(baseDir, "certs", "server.key"),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -51,8 +56,8 @@ func main() {
 	}
 }
 
-func loadPrivateKey() {
-	keyData, err := os.ReadFile("certs/rsa_private.pem")
+func loadPrivateKey(path string) {
+	keyData, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -249,4 +254,12 @@ func printHelp() {
 	fmt.Println("  remove <IP>          - remove implant from list")
 	fmt.Println("  help                 - show this message")
 	fmt.Println("  exit                 - quit server")
+}
+
+func getBaseDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "."
+	}
+	return filepath.Dir(exe)
 }
