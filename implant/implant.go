@@ -10,7 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -21,7 +21,14 @@ func main() {
 	loadPublicKey()
 	serverAddr := "127.0.0.1:5000"
 
-	config := &tls.Config{InsecureSkipVerify: true}
+	caCert, err := os.ReadFile("certs/server.crt")
+	if err != nil {
+		panic(err)
+	}
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(caCert)
+
+	config := &tls.Config{RootCAs: certPool}
 	conn, err := tls.Dial("tcp", serverAddr, config)
 	if err != nil {
 		fmt.Println("[-] Failed to connect")
@@ -52,7 +59,7 @@ func main() {
 }
 
 func loadPublicKey() {
-	keyData, err := ioutil.ReadFile("certs/rsa_public.pem")
+	keyData, err := os.ReadFile("certs/rsa_public.pem")
 	if err != nil {
 		panic(err)
 	}

@@ -12,8 +12,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/peterh/liner"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"sync"
 
@@ -48,7 +48,7 @@ func main() {
 }
 
 func loadPrivateKey() {
-	keyData, err := ioutil.ReadFile("certs/rsa_private.pem")
+	keyData, err := os.ReadFile("certs/rsa_private.pem")
 	if err != nil {
 		panic(err)
 	}
