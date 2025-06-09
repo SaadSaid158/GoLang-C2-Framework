@@ -26,7 +26,10 @@ var (
 
 func main() {
 	baseDir := getBaseDir()
-	loadPublicKey(filepath.Join(baseDir, "certs", "rsa_public.pem"))
+	if err := loadPublicKey(filepath.Join(baseDir, "certs", "rsa_public.pem")); err != nil {
+		fmt.Println("[-]", err)
+		return
+	}
 	serverAddr := "127.0.0.1:5000"
 
 	sleepInterval = 0
@@ -69,22 +72,23 @@ func main() {
 	}
 }
 
-func loadPublicKey(path string) {
+func loadPublicKey(path string) error {
 	keyData, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("read public key: %w", err)
 	}
 
 	block, _ := pem.Decode(keyData)
 	if block == nil {
-		panic("[-] Failed to decode RSA public key")
+		return fmt.Errorf("failed to decode RSA public key")
 	}
 
 	pub, err := x509.ParsePKCS1PublicKey(block.Bytes)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("parse public key: %w", err)
 	}
 	publicKey = pub
+	return nil
 }
 
 func receiveCommand(r *bufio.Reader) (string, error) {

