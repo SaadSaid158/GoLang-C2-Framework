@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/peterh/liner"
 	"net"
@@ -96,6 +97,9 @@ func acceptConnections(ln net.Listener) {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				return
+			}
 			continue
 		}
 		addr := conn.RemoteAddr().String()
