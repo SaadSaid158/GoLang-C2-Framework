@@ -12,14 +12,14 @@ Unauthorized or malicious use of this framework is strictly prohibited. By using
 
 ## Setup
 1. Generate or supply TLS certificates inside the `certs/` directory.
-2. Build the server and implant:
+2. Build the server and implant (specify output names to avoid conflicts with the directories):
    ```bash
-   go build ./server
-   go build ./implant
+   go build -o server_app ./server
+   go build -o implant_app ./implant
    ```
 3. Start the server:
    ```bash
-   ./server
+   ./server_app
    ```
 4. Run the implant on the target system. It connects to `127.0.0.1:5000` by default.
 

