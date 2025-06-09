@@ -1,9 +1,10 @@
 # GoLang C2 Framework
 
-This project contains a simple command-and-control (C2) server and implant written in Go. It is intended for **authorized red team activities and educational use only**.
+This project contains a simple command-and-control (C2) server and implant written in Go. It is intended for **authorized red team engagements and educational use only**. The tools provided are meant to help security professionals test their defenses in a controlled setting.
 
 ## Disclaimer
-Using this code on networks or hosts without explicit permission may violate laws and regulations. The authors and contributors take no responsibility for any misuse. Always obtain proper authorization before deploying these tools.
+This framework must only be used in legitimate red team operations with the full knowledge and consent of the target organization. Using this code on networks or hosts without explicit permission may violate laws and regulations. The authors and contributors take no responsibility for any misuse. Always obtain written authorization before deploying these tools, and ensure you comply with all applicable laws and policies.
+Unauthorized or malicious use of this framework is strictly prohibited. By using these tools you accept full responsibility for your actions and any consequences that may arise. They are provided "as is" without warranty of any kind.
 
 ## Requirements
 - Go 1.22 or newer
